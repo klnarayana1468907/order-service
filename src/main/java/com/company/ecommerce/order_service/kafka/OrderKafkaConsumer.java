@@ -7,7 +7,9 @@ import com.company.ecommerce.common.event.PaymentFailedEvent;
 import com.company.ecommerce.order_service.services.OrderService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderKafkaConsumer {
@@ -26,8 +28,7 @@ public class OrderKafkaConsumer {
 	            event.getOrderId(),
 	            "CANCELLED"
 	    );
-
-	    System.out.println("Order cancelled successfully");
+   log.info("Order cancelled successfully");
 	}
 
 }
