@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.company.ecommerce.order_service.dto.OrderRequest;
 import com.company.ecommerce.order_service.dto.OrderResponse;
-import com.company.ecommerce.order_service.service.impl.OrderServiceImpl;
 import com.company.ecommerce.order_service.services.OrderService;
 
 import jakarta.validation.Valid;

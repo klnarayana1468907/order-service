@@ -5,14 +5,8 @@ spring:
   application:
     name: order-service
 
-  devtools:
-    restart:
-      enabled: true
-    livereload:
-      enabled: true
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/orderdb
+    url: jdbc:postgresql://postgres:5432/orderdb
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -25,14 +19,8 @@ spring:
       hibernate:
         format_sql: true
 
-  cloud:
-    loadbalancer:
-      instances:
-        product-service:
-          - uri: http://localhost:8083
-
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -43,20 +31,38 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-
       properties:
         spring.json.trusted.packages: "*"
 
-logging:
-  file:
-    name: logs/order-service.log
+    template:
+      observation-enabled: true
 
+    listener:
+      observation-enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+  instance:
+    prefer-ip-address: true
+
+logging:
   level:
     root: INFO
     org.springframework.kafka: INFO
     com.company.ecommerce: DEBUG
 
 management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
   endpoints:
     web:
       exposure:
@@ -66,8 +72,26 @@ management:
     health:
       show-details: always
 
-info:
-  app:
-    name: Order Service
-    version: 1.0
-    description: E-Commerce Order Microservice
+resilience4j:
+  circuitbreaker:
+    instances:
+      productService:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        sliding-window-size: 10
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+  retry:
+    instances:
+      productService:
+        max-attempts: 3
+        wait-duration: 2s
+
+  ratelimiter:
+    instances:
+      orderService:
+        limit-for-period: 5
+        limit-refresh-period: 10s
+        timeout-duration: 0

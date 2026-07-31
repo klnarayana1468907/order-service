@@ -21,6 +21,9 @@ import com.company.ecommerce.order_service.repository.OrderItemRepository;
 import com.company.ecommerce.order_service.repository.OrderRepository;
 import com.company.ecommerce.order_service.services.OrderService;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -33,8 +36,20 @@ public class OrderServiceImpl implements OrderService {
     private final ProductClient productClient;
     private final OrderKafkaProducer kafkaProducer;
 
+    @RateLimiter(
+    	    name = "orderService",
+    	    fallbackMethod = "rateLimiterFallback"
+    	)
+    @Retry(name = "productService")
+    @CircuitBreaker(
+    	    name = "productService",
+    	    fallbackMethod = "productServiceFallback"
+    	)
     @Override
     public OrderResponse createOrder(OrderRequest request, Long userId) {
+    	
+        System.out.println("createOrder method called...");
+
 
         double totalAmount = 0;
         List<OrderItem> orderItems = new ArrayList<>();
@@ -119,6 +134,32 @@ public class OrderServiceImpl implements OrderService {
         response.setOrderId(savedOrder.getId());
         response.setTotalAmount(savedOrder.getTotalAmount());
         response.setStatus(savedOrder.getStatus());
+
+        return response;
+    }
+    
+    public OrderResponse productServiceFallback(
+            OrderRequest request,
+            Long userId,
+            Throwable ex) {
+
+        OrderResponse response = new OrderResponse();
+        response.setOrderId(null);
+        response.setTotalAmount(0.0);
+        response.setStatus(OrderStatus.FAILED);
+
+        return response;
+    }
+    
+    public OrderResponse rateLimiterFallback(
+            OrderRequest request,
+            Long userId,
+            Throwable ex) {
+
+        OrderResponse response = new OrderResponse();
+        response.setOrderId(null);
+        response.setTotalAmount(0.0);
+        response.setStatus(OrderStatus.FAILED);
 
         return response;
     }

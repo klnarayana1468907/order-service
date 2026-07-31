@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.company.ecommerce.order_service.dto.ProductResponse;
 
-@FeignClient(name = "product-service",url = "http://localhost:8083")
+@FeignClient(name = "product-service")
 public interface ProductClient {
 	
 	 @GetMapping("/api/products/{id}")
